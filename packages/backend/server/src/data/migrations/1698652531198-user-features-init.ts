@@ -1,7 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 
 import { Features } from '../../core/features';
-import { Quotas } from '../../core/quota/schema';
 import { upsertFeature } from './utils/user-features';
 
 export class UserFeaturesInit1698652531198 {
@@ -10,10 +9,6 @@ export class UserFeaturesInit1698652531198 {
     // upgrade features from lower version to higher version
     for (const feature of Features) {
       await upsertFeature(db, feature);
-    }
-
-    for (const quota of Quotas) {
-      await upsertFeature(db, quota);
     }
   }
 

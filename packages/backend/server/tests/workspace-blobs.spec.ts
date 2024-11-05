@@ -157,7 +157,7 @@ test('should be able calc quota after switch plan', async t => {
   );
   t.is(size1, 0, 'failed to check free plan blob size');
 
-  await quota.switchUserQuota(u1.id, QuotaType.ProPlanV1);
+  await quota.switchUserQuota(u1.id, QuotaType.TeamWorkspace);
 
   const size2 = await checkBlobSize(
     app,
@@ -177,7 +177,7 @@ test('should reject blob exceeded limit', async t => {
   const buffer1 = Buffer.from(Array.from({ length: OneMB + 1 }, () => 0));
   await t.throwsAsync(setBlob(app, u1.token.token, workspace1.id, buffer1));
 
-  await quota.switchUserQuota(u1.id, QuotaType.FreePlanV1);
+  await quota.switchUserQuota(u1.id, QuotaType.PersonalWorkspace);
 
   const buffer2 = Buffer.from(Array.from({ length: OneMB + 1 }, () => 0));
   await t.notThrowsAsync(setBlob(app, u1.token.token, workspace1.id, buffer2));

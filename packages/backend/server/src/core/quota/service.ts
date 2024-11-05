@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 
 import type { EventPayload } from '../../fundamentals';
@@ -10,6 +10,8 @@ import { QuotaType } from './types';
 
 @Injectable()
 export class QuotaService {
+  private readonly logger = new Logger(QuotaService.name);
+
   constructor(
     private readonly prisma: PrismaClient,
     private readonly feature: FeatureManagementService
@@ -21,7 +23,9 @@ export class QuotaService {
       where: {
         userId,
         feature: {
-          type: FeatureKind.Quota,
+          feature: {
+            in: Object.values(QuotaType),
+          },
         },
         activated: true,
       },
@@ -161,13 +165,8 @@ export class QuotaService {
         await this.feature.addCopilot(userId, 'subscription activated');
         break;
       case 'pro':
-        await this.switchUserQuota(
-          userId,
-          recurring === 'lifetime'
-            ? QuotaType.LifetimeProPlanV1
-            : QuotaType.ProPlanV1,
-          'subscription activated'
-        );
+        // TODO: fix quotas
+        this.logger.debug('user.subscription.activated: ', userId, plan, recurring);
         break;
       default:
         break;
@@ -186,14 +185,7 @@ export class QuotaService {
       case 'pro': {
         // edge case: when user switch from recurring Pro plan to `Lifetime` plan,
         // a subscription canceled event will be triggered because `Lifetime` plan is not subscription based
-        const quota = await this.getUserQuota(userId);
-        if (quota.feature.name !== QuotaType.LifetimeProPlanV1) {
-          await this.switchUserQuota(
-            userId,
-            QuotaType.FreePlanV1,
-            'subscription canceled'
-          );
-        }
+        // TODO: fix quotas
         break;
       }
       default:

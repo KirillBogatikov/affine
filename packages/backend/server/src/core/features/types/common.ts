@@ -6,9 +6,11 @@ export enum FeatureType {
   EarlyAccess = 'early_access',
   AIEarlyAccess = 'ai_early_access',
   UnlimitedCopilot = 'unlimited_copilot',
+  UnlimitedWorkspace = 'unlimited_workspace',
+  PersonalWorkspace = 'personal_workspace',
+  TeamWorkspace = 'team_workspace',
   // workspace feature
   Copilot = 'copilot',
-  UnlimitedWorkspace = 'unlimited_workspace',
 }
 
 registerEnumType(FeatureType, {

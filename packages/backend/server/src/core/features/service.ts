@@ -53,31 +53,31 @@ export class FeatureService {
 
       if (latestFlag) {
         return latestFlag.id;
-      } else {
-        const featureId = await tx.feature
-          .findFirst({
-            where: { feature, type: FeatureKind.Feature },
-            orderBy: { version: 'desc' },
-            select: { id: true },
-          })
-          .then(r => r?.id);
-
-        if (!featureId) {
-          throw new Error(`Feature ${feature} not found`);
-        }
-
-        return tx.userFeature
-          .create({
-            data: {
-              reason,
-              expiredAt,
-              activated: true,
-              userId,
-              featureId,
-            },
-          })
-          .then(r => r.id);
       }
+
+      const featureId = await tx.feature
+        .findFirst({
+          where: { feature, type: FeatureKind.Feature },
+          orderBy: { version: 'desc' },
+          select: { id: true },
+        })
+        .then(r => r?.id);
+
+      if (!featureId) {
+        throw new Error(`Feature ${feature} not found`);
+      }
+
+      return tx.userFeature
+        .create({
+          data: {
+            reason,
+            expiredAt,
+            activated: true,
+            userId,
+            featureId,
+          },
+        })
+        .then(r => r.id);
     });
   }
 
@@ -93,6 +93,20 @@ export class FeatureService {
             feature,
             type: FeatureKind.Feature,
           },
+          activated: true,
+        },
+        data: {
+          activated: false,
+        },
+      })
+      .then(r => r.count);
+  }
+
+  async clearUserFeatures(userId: string) {
+    return this.prisma.userFeature
+      .updateMany({
+        where: {
+          userId,
           activated: true,
         },
         data: {

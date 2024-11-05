@@ -1,20 +1,10 @@
-import { Logger } from '@nestjs/common';
-import {
-  Args,
-  Field,
-  Int,
-  Mutation,
-  ObjectType,
-  Parent,
-  Query,
-  ResolveField,
-  Resolver,
-} from '@nestjs/graphql';
-import { PrismaClient } from '@prisma/client';
-import { getStreamAsBuffer } from 'get-stream';
+import {Logger} from '@nestjs/common';
+import {Args, Field, Int, Mutation, ObjectType, Parent, Query, ResolveField, Resolver,} from '@nestjs/graphql';
+import {PrismaClient} from '@prisma/client';
+import {getStreamAsBuffer} from 'get-stream';
 import GraphQLUpload from 'graphql-upload/GraphQLUpload.mjs';
 
-import type { FileUpload } from '../../../fundamentals';
+import type {FileUpload} from '../../../fundamentals';
 import {
   CantChangeSpaceOwner,
   DocNotFound,
@@ -29,20 +19,16 @@ import {
   TooManyRequest,
   UserNotFound,
 } from '../../../fundamentals';
-import { CurrentUser, Public } from '../../auth';
-import { type Editor, PgWorkspaceDocStorageAdapter } from '../../doc';
-import { DocContentService } from '../../doc-renderer';
-import { Permission, PermissionService } from '../../permission';
-import { QuotaManagementService, QuotaQueryType } from '../../quota';
-import { WorkspaceBlobStorage } from '../../storage';
-import { UserService, UserType } from '../../user';
-import {
-  InvitationType,
-  InviteUserType,
-  UpdateWorkspaceInput,
-  WorkspaceType,
-} from '../types';
-import { defaultWorkspaceAvatar } from '../utils';
+import {CurrentUser, Public} from '../../auth';
+import {type Editor, PgWorkspaceDocStorageAdapter} from '../../doc';
+import {DocContentService} from '../../doc-renderer';
+import {Permission, PermissionService} from '../../permission';
+import {QuotaManagementService, QuotaQueryType} from '../../quota';
+import {WorkspaceBlobStorage} from '../../storage';
+import {UserService, UserType} from '../../user';
+import {InvitationType, InviteUserType, UpdateWorkspaceInput, WorkspaceType,} from '../types';
+import {defaultWorkspaceAvatar} from '../utils';
+import {FeatureType} from "../../../core/features";
 
 @ObjectType()
 export class EditorType implements Partial<Editor> {
@@ -407,7 +393,7 @@ export class WorkspaceResolver {
         target = await this.users.createUser({
           email,
           registered: false,
-        });
+        }, [FeatureType.PersonalWorkspace]);
       }
 
       const inviteId = await this.permissions.grant(

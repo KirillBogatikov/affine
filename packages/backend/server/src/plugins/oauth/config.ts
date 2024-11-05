@@ -11,6 +11,10 @@ export type OIDCArgs = {
   claim_id?: string;
   claim_email?: string;
   claim_name?: string;
+  claim_groups?: string;
+  group_admin?: string;
+  group_team_lead?: string;
+  group_user?: string;
 };
 
 export interface OAuthOIDCProviderConfig extends OAuthProviderConfig {

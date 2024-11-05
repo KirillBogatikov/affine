@@ -1,16 +1,11 @@
-import { Body, Controller, Post, Req, Res } from '@nestjs/common';
-import type { Request, Response } from 'express';
+import {Body, Controller, Post, Req, Res} from '@nestjs/common';
+import type {Request, Response} from 'express';
 
-import {
-  ActionForbidden,
-  EventEmitter,
-  InternalServerError,
-  Mutex,
-  PasswordRequired,
-} from '../../fundamentals';
-import { AuthService, Public } from '../auth';
-import { ServerService } from '../config';
-import { UserService } from '../user/service';
+import {ActionForbidden, EventEmitter, InternalServerError, Mutex, PasswordRequired,} from '../../fundamentals';
+import {AuthService, Public} from '../auth';
+import {ServerService} from '../config';
+import {UserService} from '../user/service';
+import {FeatureType} from "../../core/features";
 
 interface CreateUserInput {
   email: string;
@@ -52,7 +47,7 @@ export class CustomSetupController {
       email: input.email,
       password: input.password,
       registered: true,
-    });
+    }, [FeatureType.Admin, FeatureType.UnlimitedWorkspace]);
 
     try {
       await this.event.emitAsync('user.admin.created', user);

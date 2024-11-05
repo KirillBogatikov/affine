@@ -1,16 +1,15 @@
-import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
-import type { User, UserSession } from '@prisma/client';
-import { PrismaClient } from '@prisma/client';
-import type { CookieOptions, Request, Response } from 'express';
-import { assign, pick } from 'lodash-es';
+import {Injectable, OnApplicationBootstrap} from '@nestjs/common';
+import {Cron, CronExpression} from '@nestjs/schedule';
+import type {User, UserSession} from '@prisma/client';
+import {PrismaClient} from '@prisma/client';
+import type {CookieOptions, Request, Response} from 'express';
+import {assign, pick} from 'lodash-es';
 
-import { Config, MailService, SignUpForbidden } from '../../fundamentals';
-import { FeatureManagementService } from '../features/management';
-import { QuotaService } from '../quota/service';
-import { QuotaType } from '../quota/types';
-import { UserService } from '../user/service';
-import type { CurrentUser } from './session';
+import {Config, MailService, SignUpForbidden} from '../../fundamentals';
+import {FeatureManagementService} from '../features/management';
+import {UserService} from '../user/service';
+import type {CurrentUser} from './session';
+import {FeatureType} from "../../core/features";
 
 export function sessionUser(
   user: Pick<
@@ -49,7 +48,6 @@ export class AuthService implements OnApplicationBootstrap {
     private readonly db: PrismaClient,
     private readonly mailer: MailService,
     private readonly feature: FeatureManagementService,
-    private readonly quota: QuotaService,
     private readonly user: UserService
   ) {}
 
@@ -63,9 +61,9 @@ export class AuthService implements OnApplicationBootstrap {
             email,
             name,
             password,
-          });
+          }, []);
         }
-        await this.quota.switchUserQuota(devUser.id, QuotaType.ProPlanV1);
+
         await this.feature.addAdmin(devUser.id);
         await this.feature.addCopilot(devUser.id);
       } catch {
@@ -92,7 +90,7 @@ export class AuthService implements OnApplicationBootstrap {
       .createUser_without_verification({
         email,
         password,
-      })
+      }, [FeatureType.PersonalWorkspace])
       .then(sessionUser);
   }
 

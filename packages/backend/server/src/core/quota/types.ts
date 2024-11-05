@@ -2,7 +2,7 @@ import { Field, ObjectType } from '@nestjs/graphql';
 import { SafeIntResolver } from 'graphql-scalars';
 import { z } from 'zod';
 
-import { commonFeatureSchema, FeatureKind } from '../features/types';
+import { commonFeatureSchema } from '../features/types';
 import { ByteUnit, OneDay, OneKB } from './constant';
 
 /// ======== quota define ========
@@ -15,19 +15,16 @@ import { ByteUnit, OneDay, OneKB } from './constant';
  * but if we remove the `blobLimit` field or rename it, then we will change the Vx to Vx+1
  */
 export enum QuotaType {
-  FreePlanV1 = 'free_plan_v1',
-  ProPlanV1 = 'pro_plan_v1',
-  LifetimeProPlanV1 = 'lifetime_pro_plan_v1',
-  // only for test, smaller quota
-  RestrictedPlanV1 = 'restricted_plan_v1',
+  PersonalWorkspace = 'personal_workspace',
+  TeamWorkspace = 'team_workspace',
+  UnlimitedWorkspace = 'unlimited_workspace',
 }
 
 const quotaPlan = z.object({
   feature: z.enum([
-    QuotaType.FreePlanV1,
-    QuotaType.ProPlanV1,
-    QuotaType.LifetimeProPlanV1,
-    QuotaType.RestrictedPlanV1,
+    QuotaType.PersonalWorkspace,
+    QuotaType.TeamWorkspace,
+    QuotaType.UnlimitedWorkspace,
   ]),
   configs: z.object({
     name: z.string(),
@@ -43,9 +40,6 @@ const quotaPlan = z.object({
 /// ======== schema infer ========
 
 export const QuotaSchema = commonFeatureSchema
-  .extend({
-    type: z.literal(FeatureKind.Quota),
-  })
   .and(z.discriminatedUnion('feature', [quotaPlan]));
 
 export type Quota = z.infer<typeof QuotaSchema>;

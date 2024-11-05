@@ -5,7 +5,8 @@ import { FeatureType } from './common';
 import { featureCopilot } from './copilot';
 import { featureAIEarlyAccess, featureEarlyAccess } from './early-access';
 import { featureUnlimitedCopilot } from './unlimited-copilot';
-import { featureUnlimitedWorkspace } from './unlimited-workspace';
+import {featurePersonalWorkspace, featureTeamWorkspace, featureUnlimitedWorkspace} from './workspace';
+import {OneDay, OneGB, OneMB} from "../../quota/constant";
 
 /// ======== common schema ========
 
@@ -52,7 +53,13 @@ export const Features: Feature[] = [
     feature: FeatureType.UnlimitedWorkspace,
     type: FeatureKind.Feature,
     version: 1,
-    configs: {},
+    configs: {
+      name: 'Unlimited',
+      blobLimit: OneGB,
+      storageQuota: 500 * OneGB,
+      historyPeriod: 365 * OneDay,
+      memberLimit: 10000,
+    },
   },
   {
     feature: FeatureType.UnlimitedCopilot,
@@ -72,6 +79,30 @@ export const Features: Feature[] = [
     version: 1,
     configs: {},
   },
+  {
+    feature: FeatureType.PersonalWorkspace,
+    type: FeatureKind.Feature,
+    version: 1,
+    configs: {
+      name: 'Personal',
+      blobLimit: 10 * OneMB,
+      storageQuota: 5 * OneGB,
+      historyPeriod: 7 * OneDay,
+      memberLimit: 1,
+    },
+  },
+  {
+    feature: FeatureType.TeamWorkspace,
+    type: FeatureKind.Feature,
+    version: 1,
+    configs: {
+      name: 'Team',
+      blobLimit: 30 * OneMB,
+      storageQuota: 100 * OneGB,
+      historyPeriod: 28 * OneDay,
+      memberLimit: 100,
+    },
+  }
 ];
 
 /// ======== schema infer ========
@@ -88,6 +119,8 @@ export const FeatureSchema = commonFeatureSchema
       featureUnlimitedWorkspace,
       featureUnlimitedCopilot,
       featureAdministrator,
+      featurePersonalWorkspace,
+      featureTeamWorkspace,
     ])
   );
 

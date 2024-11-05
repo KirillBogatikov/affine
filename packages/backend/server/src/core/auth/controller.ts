@@ -1,17 +1,7 @@
-import { resolveMx, resolveTxt, setServers } from 'node:dns/promises';
+import {resolveMx, resolveTxt, setServers} from 'node:dns/promises';
 
-import {
-  Body,
-  Controller,
-  Get,
-  Header,
-  HttpStatus,
-  Post,
-  Query,
-  Req,
-  Res,
-} from '@nestjs/common';
-import type { Request, Response } from 'express';
+import {Body, Controller, Get, Header, HttpStatus, Post, Query, Req, Res,} from '@nestjs/common';
+import type {Request, Response} from 'express';
 
 import {
   Config,
@@ -25,12 +15,13 @@ import {
   URLHelper,
   UseNamedGuard,
 } from '../../fundamentals';
-import { UserService } from '../user';
-import { validators } from '../utils/validators';
-import { Public } from './guard';
-import { AuthService } from './service';
-import { CurrentUser, Session } from './session';
-import { TokenService, TokenType } from './token';
+import {UserService} from '../user';
+import {validators} from '../utils/validators';
+import {Public} from './guard';
+import {AuthService} from './service';
+import {CurrentUser, Session} from './session';
+import {TokenService, TokenType} from './token';
+import {UserGroup} from "../../core/user/types";
 
 interface PreflightResponse {
   registered: boolean;
@@ -249,7 +240,7 @@ export class AuthController {
       throw new InvalidEmailToken();
     }
 
-    const user = await this.user.fulfillUser(email, {
+    const user = await this.user.fulfillUser(email, UserGroup.User, {
       emailVerifiedAt: new Date(),
       registered: true,
     });

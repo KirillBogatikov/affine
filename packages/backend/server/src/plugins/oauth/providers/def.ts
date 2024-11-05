@@ -4,6 +4,7 @@ export interface OAuthAccount {
   id: string;
   email: string;
   avatarUrl?: string;
+  group?: string;
 }
 
 export interface Tokens {

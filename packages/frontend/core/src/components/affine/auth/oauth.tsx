@@ -84,7 +84,8 @@ function OAuthProvider({
     // if (BUILD_CONFIG.isAndroid) {}
 
     const oauthUrl =
-      BUILD_CONFIG.serverUrlPrefix + `/oauth/login?${params.toString()}`;
+      (BUILD_CONFIG.isElectron ? BUILD_CONFIG.serverUrlPrefix : location.origin) +
+      `/oauth/login?${params.toString()}`;
 
     popupWindow(oauthUrl);
   }, [popupWindow, provider, redirectUrl, scheme]);

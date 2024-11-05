@@ -153,13 +153,42 @@ class OIDCClient {
       OIDCUserInfoSchema
     );
 
+    const groups = user[this.args?.claim_groups || 'groups'];
+    let group = '';
+
+    if (Array.isArray(groups)) {
+      groups.forEach((g: any) => {
+        if (typeof(g) !== "string") {
+          return
+        }
+
+        switch (g) {
+          case this.args?.group_admin || 'admin':
+            group = 'admin';
+            break;
+
+          case this.args?.group_team_lead || 'team_lead':
+            group = 'team_lead';
+            break;
+
+          case this.args?.group_user || 'user':
+            group = 'user';
+            break
+        }
+      })
+    }
+
     const claimsMap = {
       id: this.args?.claim_id || 'preferred_username',
       email: this.args?.claim_email || 'email',
       name: this.args?.claim_name || 'name',
     };
     const userinfo = this.mapUserInfo(user, claimsMap);
-    return { id: userinfo.id, email: userinfo.email };
+    return {
+      id: userinfo.id,
+      email: userinfo.email,
+      group: group
+    };
   }
 }
 

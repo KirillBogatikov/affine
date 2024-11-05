@@ -1,19 +1,20 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { Prisma, PrismaClient, User } from '@prisma/client';
+import {Injectable, Logger} from '@nestjs/common';
+import {Prisma, PrismaClient, User} from '@prisma/client';
 
 import {
   Config,
   CryptoHelper,
   EmailAlreadyUsed,
   EventEmitter,
-  type EventPayload,
+  type EventPayload, InternalServerError,
   OnEvent,
   WrongSignInCredentials,
   WrongSignInMethod,
 } from '../../fundamentals';
-import { PermissionService } from '../permission';
-import { Quota_FreePlanV1_1 } from '../quota/schema';
-import { validators } from '../utils/validators';
+import {PermissionService} from '../permission';
+import {validators} from '../utils/validators';
+import {UserGroup} from "./types";
+import {FeatureKind, FeatureType} from "../features";
 
 type CreateUserInput = Omit<Prisma.UserCreateInput, 'name'> & { name?: string };
 
@@ -42,21 +43,10 @@ export class UserService {
   get userCreatingData() {
     return {
       name: 'Unnamed',
-      features: {
-        create: {
-          reason: 'sign up',
-          activated: true,
-          feature: {
-            connect: {
-              feature_version: Quota_FreePlanV1_1,
-            },
-          },
-        },
-      },
     };
   }
 
-  async createUser(data: CreateUserInput) {
+  async createUser(data: CreateUserInput, features: FeatureType[]) {
     validators.assertValidEmail(data.email);
 
     if (data.password) {
@@ -70,11 +60,11 @@ export class UserService {
       });
     }
 
-    return this.createUser_without_verification(data);
+    return this.createUser_without_verification(data, features);
   }
 
-  async createUser_without_verification(data: CreateUserInput) {
-    const user = await this.findUserByEmail(data.email);
+  async createUser_without_verification(data: CreateUserInput, features: FeatureType[]) {
+    let user = await this.findUserByEmail(data.email);
 
     if (user) {
       throw new EmailAlreadyUsed();
@@ -88,12 +78,66 @@ export class UserService {
       data.name = data.email.split('@')[0];
     }
 
-    return this.prisma.user.create({
+    const createdUser = await this.prisma.user.create({
       select: this.defaultUserSelect,
       data: {
         ...this.userCreatingData,
         ...data,
       },
+    });
+
+    if (!createdUser) {
+      throw new InternalServerError('user create returned null');
+    }
+
+    await this.addUserFeatures(createdUser.id, features);
+
+    return createdUser;
+  }
+
+  async addUserFeatures(userId: string, features: FeatureType[]) {
+    return this.prisma.$transaction(async tx => {
+      for (const feature of features) {
+        const latestFlag = await tx.userFeature.findFirst({
+          where: {
+            userId,
+            feature: {
+              feature,
+              type: FeatureKind.Feature,
+            },
+            activated: true,
+          },
+          orderBy: {
+            createdAt: 'desc',
+          },
+        });
+
+        if (latestFlag) {
+          continue;
+        }
+
+        const featureId = await tx.feature
+          .findFirst({
+            where: {feature, type: FeatureKind.Feature},
+            orderBy: {version: 'desc'},
+            select: {id: true},
+          })
+          .then(r => r?.id);
+
+        if (!featureId) {
+          throw new Error(`Feature ${feature} not found`);
+        }
+
+        await tx.userFeature
+          .create({
+            data: {
+              reason: 'sign up',
+              activated: true,
+              userId,
+              featureId,
+            },
+          });
+      }
     });
   }
 
@@ -205,30 +249,64 @@ export class UserService {
 
   async fulfillUser(
     email: string,
+    group: UserGroup,
     data: Omit<Partial<Prisma.UserCreateInput>, 'id'>
   ) {
+    const features: FeatureType[] = [];
+
+    // TODO: fix quotas
+    switch (group) {
+      case UserGroup.Admin:
+
+        features.push(FeatureType.Admin, FeatureType.UnlimitedWorkspace);
+        break;
+
+      case UserGroup.TeamLead:
+        features.push(FeatureType.TeamWorkspace);
+        break;
+
+      case UserGroup.User:
+        features.push(FeatureType.PersonalWorkspace);
+        break;
+
+      default:
+        this.logger.error('unknown user group: ', group)
+    }
+
     const user = await this.findUserByEmail(email);
     if (!user) {
       return this.createUser({
-        ...this.userCreatingData,
         email,
         name: email.split('@')[0],
         ...data,
-      });
-    } else {
-      if (user.registered) {
-        delete data.registered;
-      }
-      if (user.emailVerifiedAt) {
-        delete data.emailVerifiedAt;
-      }
+      }, features);
+    }
 
-      if (Object.keys(data).length) {
-        return await this.prisma.user.update({
-          where: { id: user.id },
-          data,
-        });
-      }
+    if (user.registered) {
+      delete data.registered;
+    }
+    if (user.emailVerifiedAt) {
+      delete data.emailVerifiedAt;
+    }
+
+    if (Object.keys(data).length) {
+      const updatedUser = await this.prisma.user.update({
+        where: { id: user.id },
+        data,
+      });
+
+      await this.prisma.userFeature
+        .updateMany({
+          where: {
+            userId: updatedUser.id,
+            activated: true,
+          },
+          data: {
+            activated: false,
+          },
+        })
+
+      await this.addUserFeatures(updatedUser.id, features);
     }
 
     this.emitter.emit('user.updated', user);

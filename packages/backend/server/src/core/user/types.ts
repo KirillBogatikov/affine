@@ -92,6 +92,12 @@ export class ManageUserInput {
   name?: string;
 }
 
+export enum UserGroup {
+  Admin = 'admin',
+  TeamLead = 'team_lead',
+  User = 'user'
+}
+
 declare module '../../fundamentals/event/def' {
   interface UserEvents {
     admin: {

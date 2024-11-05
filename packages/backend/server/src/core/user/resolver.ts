@@ -1,38 +1,18 @@
-import {
-  Args,
-  Field,
-  InputType,
-  Int,
-  Mutation,
-  Query,
-  ResolveField,
-  Resolver,
-} from '@nestjs/graphql';
-import { PrismaClient } from '@prisma/client';
+import {Args, Field, InputType, Int, Mutation, Query, ResolveField, Resolver,} from '@nestjs/graphql';
+import {PrismaClient} from '@prisma/client';
 import GraphQLUpload from 'graphql-upload/GraphQLUpload.mjs';
-import { isNil, omitBy } from 'lodash-es';
+import {isNil, omitBy} from 'lodash-es';
 
-import {
-  CannotDeleteOwnAccount,
-  type FileUpload,
-  Throttle,
-  UserNotFound,
-} from '../../fundamentals';
-import { Public } from '../auth/guard';
-import { sessionUser } from '../auth/service';
-import { CurrentUser } from '../auth/session';
-import { Admin } from '../common';
-import { AvatarStorage } from '../storage';
-import { validators } from '../utils/validators';
-import { UserService } from './service';
-import {
-  DeleteAccount,
-  ManageUserInput,
-  RemoveAvatar,
-  UpdateUserInput,
-  UserOrLimitedUser,
-  UserType,
-} from './types';
+import {CannotDeleteOwnAccount, type FileUpload, Throttle, UserNotFound,} from '../../fundamentals';
+import {Public} from '../auth/guard';
+import {sessionUser} from '../auth/service';
+import {CurrentUser} from '../auth/session';
+import {Admin} from '../common';
+import {AvatarStorage} from '../storage';
+import {validators} from '../utils/validators';
+import {UserService} from './service';
+import {DeleteAccount, ManageUserInput, RemoveAvatar, UpdateUserInput, UserOrLimitedUser, UserType,} from './types';
+import {FeatureType} from "../../core/features";
 
 @Resolver(() => UserType)
 export class UserResolver {
@@ -247,7 +227,7 @@ export class UserManagementResolver {
     const { id } = await this.user.createUser({
       email: input.email,
       registered: true,
-    });
+    }, [FeatureType.PersonalWorkspace]);
 
     // data returned by `createUser` does not satisfies `UserType`
     return this.getUser(id);

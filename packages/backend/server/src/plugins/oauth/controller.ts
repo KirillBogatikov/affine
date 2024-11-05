@@ -1,28 +1,22 @@
-import {
-  Body,
-  Controller,
-  HttpCode,
-  HttpStatus,
-  Post,
-  Req,
-  Res,
-} from '@nestjs/common';
-import { ConnectedAccount, PrismaClient } from '@prisma/client';
-import type { Request, Response } from 'express';
+import {Body, Controller, HttpCode, HttpStatus, Post, Req, Res,} from '@nestjs/common';
+import {ConnectedAccount, PrismaClient} from '@prisma/client';
+import type {Request, Response} from 'express';
 
-import { AuthService, Public } from '../../core/auth';
-import { UserService } from '../../core/user';
+import {AuthService, Public} from '../../core/auth';
+import {UserService} from '../../core/user';
+import {UserGroup} from "../../core/user/types";
 import {
+  AccessDenied,
   InvalidOauthCallbackState,
   MissingOauthQueryParameter,
   OauthAccountAlreadyConnected,
   OauthStateExpired,
   UnknownOauthProvider,
 } from '../../fundamentals';
-import { OAuthProviderName } from './config';
-import { OAuthAccount, Tokens } from './providers/def';
-import { OAuthProviderFactory } from './register';
-import { OAuthService } from './service';
+import {OAuthProviderName} from './config';
+import {OAuthAccount, Tokens} from './providers/def';
+import {OAuthProviderFactory} from './register';
+import {OAuthService} from './service';
 
 @Controller('/api/oauth')
 export class OAuthController {
@@ -130,14 +124,25 @@ export class OAuthController {
       },
     });
 
+    const group = externalAccount.group as UserGroup;
+    if (!Object.values(UserGroup).includes(group)) {
+      throw new AccessDenied('check your groups');
+    }
+
     if (connectedUser) {
       // already connected
       await this.updateConnectedAccount(connectedUser, tokens);
 
+      await this.user.fulfillUser(externalAccount.email, group, {
+        emailVerifiedAt: new Date(),
+        registered: true,
+        avatarUrl: externalAccount.avatarUrl,
+      });
+
       return connectedUser.user;
     }
 
-    const user = await this.user.fulfillUser(externalAccount.email, {
+    const user = await this.user.fulfillUser(externalAccount.email, group, {
       emailVerifiedAt: new Date(),
       registered: true,
       avatarUrl: externalAccount.avatarUrl,
